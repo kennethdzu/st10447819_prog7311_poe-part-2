@@ -1,0 +1,84 @@
+@model IEnumerable<TechMove.Glms.Web.Models.Contract>
+@{
+    ViewData["Title"] = "Contracts";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>Contracts (Admin Panel)</h2>
+    <a asp-action="Create" class="btn btn-primary">Create New Contract</a>
+</div>
+
+<div class="card mb-4 shadow-sm">
+    <div class="card-body bg-light">
+        <form method="get" asp-action="Index" class="row gx-3 gy-2 align-items-center">
+            <div class="col-sm-3">
+                <label class="visually-hidden">Start Date</label>
+                <input type="date" name="startDate" class="form-control" value="@ViewBag.StartDate" placeholder="Start Date" />
+            </div>
+            <div class="col-sm-3">
+                <label class="visually-hidden">End Date</label>
+                <input type="date" name="endDate" class="form-control" value="@ViewBag.EndDate" placeholder="End Date" />
+            </div>
+            <div class="col-sm-3">
+                <label class="visually-hidden">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses...</option>
+                    @if (ViewBag.Status == "Draft") { <option value="Draft" selected>Draft</option> } else { <option value="Draft">Draft</option> }
+                    @if (ViewBag.Status == "Active") { <option value="Active" selected>Active</option> } else { <option value="Active">Active</option> }
+                    @if (ViewBag.Status == "On Hold") { <option value="On Hold" selected>On Hold</option> } else { <option value="On Hold">On Hold</option> }
+                    @if (ViewBag.Status == "Expired") { <option value="Expired" selected>Expired</option> } else { <option value="Expired">Expired</option> }
+                </select>
+            </div>
+            <div class="col-auto">
+                <button type="submit" class="btn btn-secondary">Search / Filter</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<table class="table table-hover table-bordered shadow-sm">
+    <thead class="table-dark">
+        <tr>
+            <th>ID</th>
+            <th>Type</th>
+            <th>Client</th>
+            <th>Period</th>
+            <th>Status</th>
+            <th>PDF</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@item.Id</td>
+                <td><span class="badge bg-secondary">@item.GetType().Name.Replace("Contract","")</span></td>
+                <td>@item.Client?.Name</td>
+                <td>@item.StartDate.ToShortDateString() - @item.EndDate.ToShortDateString()</td>
+                <td>
+                    @{
+                        var badgeClass = item.Status switch {
+                            "Active" => "bg-success",
+                            "Draft" => "bg-warning text-dark",
+                            "Expired" => "bg-danger",
+                            "On Hold" => "bg-secondary",
+                            _ => "bg-primary"
+                        };
+                    }
+                    <span class="badge @badgeClass">@item.Status</span>
+                </td>
+                <td>
+                    @if (!string.IsNullOrEmpty(item.SignedAgreementPdfPath))
+                    {
+                        <a asp-action="DownloadAgreement" asp-route-id="@item.Id" class="btn btn-sm btn-outline-info">Download PDF</a>
+                    }
+                </td>
+                <td>
+                    <a asp-controller="ServiceRequest" asp-action="Create" asp-route-contractId="@item.Id" class="btn btn-sm btn-primary">Add SR</a>
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>

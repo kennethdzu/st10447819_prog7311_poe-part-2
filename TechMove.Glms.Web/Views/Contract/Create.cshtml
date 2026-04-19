@@ -1,0 +1,75 @@
+@model TechMove.Glms.Web.Models.ContractCreateViewModel
+@{
+    ViewData["Title"] = "Create Contract";
+}
+
+<h2>Create New Contract</h2>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create" enctype="multipart/form-data">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            
+            <div class="mb-3">
+                <label class="form-label">Client</label>
+                <select asp-for="ClientId" class="form-select" required>
+                    <option value="">-- Select Client --</option>
+                    @foreach (var client in ViewBag.Clients)
+                    {
+                        <option value="@client.Id">@client.Name</option>
+                    }
+                </select>
+                <span asp-validation-for="ClientId" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Contract Type</label>
+                <select name="ContractType" class="form-select" required>
+                    <option value="Freight">Freight Contract</option>
+                    <option value="Warehousing">Warehousing Contract</option>
+                    <option value="LastMile">Last-Mile Contract</option>
+                </select>
+            </div>
+            
+            <div class="row">
+                <div class="col-md-6 mb-3">
+                    <label asp-for="StartDate" class="form-label"></label>
+                    <input asp-for="StartDate" class="form-control" type="date" required/>
+                    <span asp-validation-for="StartDate" class="text-danger"></span>
+                </div>
+                <div class="col-md-6 mb-3">
+                    <label asp-for="EndDate" class="form-label"></label>
+                    <input asp-for="EndDate" class="form-control" type="date" required/>
+                    <span asp-validation-for="EndDate" class="text-danger"></span>
+                </div>
+            </div>
+            
+            <div class="mb-3">
+                <label asp-for="Status" class="form-label"></label>
+                <select asp-for="Status" class="form-select">
+                    <option value="Draft">Draft</option>
+                    <option value="Active">Active</option>
+                </select>
+                <span asp-validation-for="Status" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="ServiceLevel" class="form-label"></label>
+                <input asp-for="ServiceLevel" class="form-control" placeholder="e.g. Bronze, Silver, Gold" required/>
+                <span asp-validation-for="ServiceLevel" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Signed Agreement (PDF Form, Required)</label>
+                <input type="file" name="agreementPdf" class="form-control" accept="application/pdf" required />
+                <span class="text-danger">@Html.ValidationMessage("SignedAgreementPdfPath")</span>
+            </div>
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Create</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>

@@ -1,0 +1,62 @@
+@model TechMove.Glms.Web.Models.ServiceRequest
+@{
+    ViewData["Title"] = "Create Service Request";
+    
+    // Check if contractId was passed in route data to pre-select
+    var preselectedContractId = Context.Request.Query["contractId"].ToString();
+}
+
+<h2>Create Service Request (External API Integration)</h2>
+<p class="text-muted">Type the required Cost in USD. The system will automatically convert and save it as ZAR.</p>
+<hr />
+
+<div class="row">
+    <div class="col-md-6">
+        <form asp-action="Create">
+            <div asp-validation-summary="ModelOnly" class="text-danger"></div>
+            <span class="text-danger">@Html.ValidationMessage("ContractId")</span>
+            
+            <div class="mb-3">
+                <label class="form-label">Associated Contract</label>
+                <select asp-for="ContractId" class="form-select" required>
+                    <option value="">-- Select Valid Contract --</option>
+                    @foreach (var contract in ViewBag.Contracts)
+                    {
+                        if (preselectedContractId == contract.Id.ToString())
+                        {
+                            <option value="@contract.Id" selected>ID: @contract.Id - @contract.Status - @contract.ServiceLevel</option>
+                        }
+                        else
+                        {
+                            <option value="@contract.Id">ID: @contract.Id - @contract.Status - @contract.ServiceLevel</option>
+                        }
+                    }
+                </select>
+                <div class="form-text">Note: Expired and On Hold contracts are hidden. Submitting one anyway will fail validation.</div>
+            </div>
+
+            <div class="mb-3">
+                <label asp-for="Description" class="form-label"></label>
+                <textarea asp-for="Description" class="form-control" rows="3" required></textarea>
+                <span asp-validation-for="Description" class="text-danger"></span>
+            </div>
+
+            <div class="mb-3">
+                <label class="form-label">Estimated Cost (in USD)</label>
+                <div class="input-group">
+                    <span class="input-group-text">$</span>
+                    <input type="number" step="0.01" name="CostUsd" class="form-control" required />
+                </div>
+                <div class="form-text text-success">This will be converted to ZAR using a live API upon submission.</div>
+                <span class="text-danger">@Html.ValidationMessage("CostUsd")</span>
+            </div>
+
+            <input type="hidden" asp-for="Status" value="Pending" />
+
+            <div class="mb-3">
+                <button type="submit" class="btn btn-primary">Submit Request</button>
+                <a asp-action="Index" class="btn btn-outline-secondary">Back to List</a>
+            </div>
+        </form>
+    </div>
+</div>

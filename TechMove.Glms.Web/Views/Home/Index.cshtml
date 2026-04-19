@@ -1,0 +1,32 @@
+@{
+    ViewData["Title"] = "Dashboard";
+}
+
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="p-5 mb-4 bg-white rounded-3 box-shadow border">
+            <div class="container-fluid py-5">
+                <h1 class="display-5 fw-bold">TechMove GLMS</h1>
+                <p class="col-md-8 fs-4">Global Logistics Management System. This prototype implements enterprise capabilities for managing contracts, clients, and service requests securely.</p>
+                <a class="btn btn-primary btn-lg" asp-controller="Contract" asp-action="Index" type="button">Manage Contracts</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="row align-items-md-stretch">
+    <div class="col-md-6">
+        <div class="h-100 p-5 bg-white rounded-3 border box-shadow">
+            <h2>Clients & Approvals</h2>
+            <p>Administer logistics clients, upload agreement PDFs, and handle validation. Workflow engine accurately restricts requests based on active terms.</p>
+            <a class="btn btn-outline-dark" asp-controller="Client" asp-action="Create" type="button">New Client</a>
+        </div>
+    </div>
+    <div class="col-md-6">
+        <div class="h-100 p-5 bg-light rounded-3 border box-shadow mt-4 mt-md-0">
+            <h2>Service Requests</h2>
+            <p>Monitor end-to-end service delivery requests mapped dynamically against active client contracts. Check current exchange rates seamlessly.</p>
+            <a class="btn btn-outline-secondary" asp-controller="ServiceRequest" asp-action="Index" type="button">View Requests</a>
+        </div>
+    </div>
+</div>
