@@ -18,14 +18,12 @@ public class AppDbContext : DbContext
     {
         base.OnModelCreating(modelBuilder);
 
-        // Setup contract types
         modelBuilder.Entity<Contract>()
             .HasDiscriminator<string>("ContractType")
             .HasValue<FreightContract>("Freight")
             .HasValue<WarehousingContract>("Warehousing")
             .HasValue<LastMileContract>("LastMile");
 
-        // Setup client table
         modelBuilder.Entity<Client>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -40,7 +38,6 @@ public class AppDbContext : DbContext
                   .HasMaxLength(100);
         });
 
-        // Setup contract base table
         modelBuilder.Entity<Contract>(entity =>
         {
             entity.HasKey(e => e.Id);
@@ -65,7 +62,6 @@ public class AppDbContext : DbContext
                   .HasMaxLength(255);
         });
 
-        // Setup service requests
         modelBuilder.Entity<ServiceRequest>(entity =>
         {
             entity.HasKey(e => e.Id);

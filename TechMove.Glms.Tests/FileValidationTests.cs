@@ -11,12 +11,7 @@ public class FileValidationTests
 {
     private readonly FileValidationService _service = new FileValidationService();
 
-    // ── Helpers ───────────────────────────────────────────────────────────────
 
-    /// <summary>
-    /// Builds a mocked IFormFile bearing the given filename, content type,
-    /// and raw byte content (so magic-bytes validation can be exercised).
-    /// </summary>
     private static IFormFile MakeFile(string fileName, string contentType, byte[] content)
     {
         var stream = new MemoryStream(content);
@@ -34,7 +29,6 @@ public class FileValidationTests
     private static byte[] NonPdfBytes()
         => Encoding.ASCII.GetBytes("MZ\x90\x00 — this is an EXE header");
 
-    // ── Happy-path ────────────────────────────────────────────────────────────
 
     [Fact]
     public void IsValidPdf_ValidPdfFile_ReturnsTrue()
@@ -43,7 +37,6 @@ public class FileValidationTests
         Assert.True(_service.IsValidPdf(file));
     }
 
-    // ── Extension / MIME failures ─────────────────────────────────────────────
 
     [Theory]
     [InlineData("image.jpg",     "image/jpeg")]
@@ -58,22 +51,18 @@ public class FileValidationTests
     [Fact]
     public void IsValidPdf_PdfExtensionButWrongMime_ReturnsFalse()
     {
-        // Extension claims PDF, but the browser's MIME type is wrong — should fail.
         var file = MakeFile("contract.pdf", "application/octet-stream", PdfBytes());
         Assert.False(_service.IsValidPdf(file));
     }
 
-    // ── Magic bytes failures ──────────────────────────────────────────────────
 
     [Fact]
     public void IsValidPdf_CorrectExtensionAndMimeButWrongMagicBytes_ReturnsFalse()
     {
-        // A renamed .exe pretending to be a PDF — magic bytes check must catch this.
         var file = MakeFile("disguised.pdf", "application/pdf", NonPdfBytes());
         Assert.False(_service.IsValidPdf(file));
     }
 
-    // ── Edge cases ────────────────────────────────────────────────────────────
 
     [Fact]
     public void IsValidPdf_NullFile_ReturnsFalse()
@@ -84,7 +73,6 @@ public class FileValidationTests
     [Fact]
     public void IsValidPdf_EmptyFile_ReturnsFalse()
     {
-        // Zero-length file: no content at all, should fail immediately.
         var file = MakeFile("empty.pdf", "application/pdf", Array.Empty<byte>());
         Assert.False(_service.IsValidPdf(file));
     }
@@ -92,7 +80,6 @@ public class FileValidationTests
     [Fact]
     public void IsValidPdf_TruncatedFile_ReturnsFalse()
     {
-        // File has only 3 bytes — cannot contain a valid %PDF- header (needs 5).
         var tinyContent = new byte[] { 0x25, 0x50, 0x44 }; // "%PD"
         var file = MakeFile("tiny.pdf", "application/pdf", tinyContent);
         Assert.False(_service.IsValidPdf(file));
