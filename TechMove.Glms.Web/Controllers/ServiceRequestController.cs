@@ -37,9 +37,7 @@ namespace TechMove.Glms.Web.Controllers
 
         public async Task<IActionResult> Create(int? contractId)
         {
-            List<Contract> contracts = await db.Contracts
-                .Where(c => c.Status != "Expired" && c.Status != "On Hold")
-                .ToListAsync();
+            List<Contract> contracts = await db.Contracts.ToListAsync();
             ViewBag.Contracts = contracts;
 
             return View();
@@ -76,9 +74,7 @@ namespace TechMove.Glms.Web.Controllers
                 }
             }
 
-            List<Contract> cli = await db.Contracts
-                .Where(c => c.Status != "Expired" && c.Status != "On Hold")
-                .ToListAsync();
+            List<Contract> cli = await db.Contracts.ToListAsync();
             ViewBag.Contracts = cli;
             return View(serviceRequest);
         }
