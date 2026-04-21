@@ -91,6 +91,21 @@ namespace TechMove.Glms.Web.Controllers
             newContract.Status = contract.Status;
             newContract.ServiceLevel = contract.ServiceLevel;
 
+            if (newContract is FreightContract freight)
+            {
+                freight.WeightLimit = contract.WeightLimit;
+                freight.Route = contract.Route;
+            }
+            else if (newContract is WarehousingContract warehouse)
+            {
+                warehouse.Capacity = contract.Capacity;
+                warehouse.TemperatureZone = contract.TemperatureZone;
+            }
+            else if (newContract is LastMileContract lastMile)
+            {
+                lastMile.DeliveryRadius = contract.DeliveryRadius;
+            }
+
             if (agreementPdf != null)
             {
                 if (!fileValidator.IsValidPdf(agreementPdf))

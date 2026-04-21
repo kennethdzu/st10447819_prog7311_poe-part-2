@@ -13,6 +13,7 @@ public class WorkflowValidationTests
     [Theory]
     [InlineData("Expired")]
     [InlineData("On Hold")]
+    [InlineData("Draft")]
     public void ValidateServiceRequestCreation_BlockedStatus_ReturnsErrorMessage(string status)
     {
         var contract = new FreightContract { Status = status };
@@ -25,7 +26,6 @@ public class WorkflowValidationTests
 
     [Theory]
     [InlineData("Active")]
-    [InlineData("Draft")]
     public void ValidateServiceRequestCreation_AllowedStatus_ReturnsNull(string status)
     {
         var contract = new FreightContract { Status = status };

@@ -25,7 +25,7 @@
 
             <div class="mb-3">
                 <label class="form-label">Contract Type</label>
-                <select name="ContractType" class="form-select" required>
+                <select id="contractTypeSelect" name="ContractType" class="form-select" required onchange="toggleFields()">
                     <option value="Freight">Freight Contract</option>
                     <option value="Warehousing">Warehousing Contract</option>
                     <option value="LastMile">Last-Mile Contract</option>
@@ -60,6 +60,35 @@
                 <span asp-validation-for="ServiceLevel" class="text-danger"></span>
             </div>
 
+            <div id="freightFields" class="dynamic-field">
+                <div class="mb-3">
+                    <label asp-for="WeightLimit" class="form-label">Weight Limit (kg)</label>
+                    <input asp-for="WeightLimit" class="form-control" type="number" step="0.01" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="Route" class="form-label">Route</label>
+                    <input asp-for="Route" class="form-control" />
+                </div>
+            </div>
+
+            <div id="warehousingFields" class="dynamic-field" style="display: none;">
+                <div class="mb-3">
+                    <label asp-for="Capacity" class="form-label">Capacity (Cubic Meters)</label>
+                    <input asp-for="Capacity" class="form-control" type="number" />
+                </div>
+                <div class="mb-3">
+                    <label asp-for="TemperatureZone" class="form-label">Temperature Zone</label>
+                    <input asp-for="TemperatureZone" class="form-control" />
+                </div>
+            </div>
+
+            <div id="lastMileFields" class="dynamic-field" style="display: none;">
+                <div class="mb-3">
+                    <label asp-for="DeliveryRadius" class="form-label">Delivery Radius (km)</label>
+                    <input asp-for="DeliveryRadius" class="form-control" type="number" step="0.01" />
+                </div>
+            </div>
+
             <div class="mb-3">
                 <label class="form-label">Signed Agreement (PDF Form, Required)</label>
                 <input type="file" name="agreementPdf" class="form-control" accept="application/pdf" required />
@@ -73,3 +102,26 @@
         </form>
     </div>
 </div>
+
+@section Scripts {
+    <script>
+        function toggleFields() {
+            var type = document.getElementById("contractTypeSelect").value;
+            
+            document.getElementById("freightFields").style.display = "none";
+            document.getElementById("warehousingFields").style.display = "none";
+            document.getElementById("lastMileFields").style.display = "none";
+            
+            if (type === "Freight") {
+                document.getElementById("freightFields").style.display = "block";
+            } else if (type === "Warehousing") {
+                document.getElementById("warehousingFields").style.display = "block";
+            } else if (type === "LastMile") {
+                document.getElementById("lastMileFields").style.display = "block";
+            }
+        }
+        
+        // Ensure accurate state on initial page load
+        window.onload = toggleFields;
+    </script>
+}

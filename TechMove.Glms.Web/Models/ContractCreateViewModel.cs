@@ -25,4 +25,11 @@ public class ContractCreateViewModel
     [StringLength(50)]
     [Display(Name = "Service Level")]
     public string ServiceLevel { get; set; }
+
+    // Subclass properties (nullable since they vary by type)
+    public double? WeightLimit { get; set; }
+    public string? Route { get; set; }
+    public double? DeliveryRadius { get; set; }
+    public int? Capacity { get; set; }
+    public string? TemperatureZone { get; set; }
 }

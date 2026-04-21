@@ -12,10 +12,9 @@ namespace TechMove.Glms.Web.Services
                 return "The associated contract could not be found.";
             }
 
-            if (contract.Status?.Trim().Equals("Expired", StringComparison.OrdinalIgnoreCase) == true || 
-                contract.Status?.Trim().Equals("On Hold", StringComparison.OrdinalIgnoreCase) == true)
+            if (!contract.Status?.Trim().Equals("Active", StringComparison.OrdinalIgnoreCase) == true)
             {
-                return "A Service Request cannot be created for a contract with status '" + contract.Status + "'. Only Active or Draft contracts may receive new requests.";
+                return "A Service Request cannot be created for a contract with status '" + contract.Status + "'. Only Active contracts may receive new requests.";
             }
 
             return null; 
