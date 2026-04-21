@@ -93,17 +93,17 @@ namespace TechMove.Glms.Web.Controllers
 
             if (newContract is FreightContract freight)
             {
-                freight.WeightLimit = contract.WeightLimit;
+                freight.WeightLimit = contract.WeightLimit.GetValueOrDefault();
                 freight.Route = contract.Route;
             }
             else if (newContract is WarehousingContract warehouse)
             {
-                warehouse.Capacity = contract.Capacity;
+                warehouse.Capacity = contract.Capacity.GetValueOrDefault();
                 warehouse.TemperatureZone = contract.TemperatureZone;
             }
             else if (newContract is LastMileContract lastMile)
             {
-                lastMile.DeliveryRadius = contract.DeliveryRadius;
+                lastMile.DeliveryRadius = contract.DeliveryRadius.GetValueOrDefault();
             }
 
             if (agreementPdf != null)
