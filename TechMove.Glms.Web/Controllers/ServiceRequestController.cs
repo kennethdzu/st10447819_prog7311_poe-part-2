@@ -76,7 +76,9 @@ namespace TechMove.Glms.Web.Controllers
                 }
             }
 
-            List<Contract> cli = await db.Contracts.ToListAsync();
+            List<Contract> cli = await db.Contracts
+                .Where(c => c.Status != "Expired" && c.Status != "On Hold")
+                .ToListAsync();
             ViewBag.Contracts = cli;
             return View(serviceRequest);
         }
