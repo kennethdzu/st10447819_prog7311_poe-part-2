@@ -2,9 +2,14 @@ using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
+using System.Text.Json.Serialization;
 
 namespace TechMove.Glms.Web.Models;
 
+[JsonPolymorphic(TypeDiscriminatorPropertyName = "$contractType")]
+[JsonDerivedType(typeof(FreightContract), "Freight")]
+[JsonDerivedType(typeof(WarehousingContract), "Warehousing")]
+[JsonDerivedType(typeof(LastMileContract), "LastMile")]
 public abstract class Contract
 {
     public int Id { get; set; }

@@ -13,7 +13,6 @@
         <tr>
             <th>ID</th>
             <th>Contract ID</th>
-            <th>Client</th>
             <th>Description</th>
             <th>Expected Cost (ZAR)</th>
             <th>Status</th>
@@ -25,7 +24,6 @@
             <tr>
                 <td>@item.Id</td>
                 <td>@item.ContractId</td>
-                <td>@item.Contract?.Client?.Name</td>
                 <td>@item.Description</td>
                 <td>R @item.Cost.ToString("N2")</td>
                 <td><span class="badge bg-info text-dark">@item.Status</span></td>

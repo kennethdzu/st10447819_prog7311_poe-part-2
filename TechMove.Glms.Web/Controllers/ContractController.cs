@@ -15,54 +15,78 @@ namespace TechMove.Glms.Web.Controllers
 {
     public class ContractController : Controller
     {
-        AppDbContext db;
-        FileValidationService fileValidator;
-        IWebHostEnvironment env;
-        IContractFactory contractFactory;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly FileValidationService _fileValidator;
+        private readonly IWebHostEnvironment _env;
+        private readonly IContractFactory _contractFactory;
+        private string _token;
 
         public ContractController(
-            AppDbContext context,
+            IHttpClientFactory httpClientFactory,
             FileValidationService validator,
             IWebHostEnvironment environment,
             IContractFactory factory)
         {
-            db = context;
-            fileValidator = validator;
-            env = environment;
-            contractFactory = factory;
+            _httpClientFactory = httpClientFactory;
+            _fileValidator = validator;
+            _env = environment;
+            _contractFactory = factory;
+        }
+
+        private async Task<HttpClient> GetClientAsync()
+        {
+            HttpClient client = _httpClientFactory.CreateClient("ApiClient");
+            
+            // In a real app, this would be retrieved from user session/cookie after login.
+            // For this prototype, we authenticate directly to get a service token.
+            if (string.IsNullOrEmpty(_token))
+            {
+                var authResponse = await client.PostAsync("/api/auth/login", null);
+                if (authResponse.IsSuccessStatusCode)
+                {
+                    var tokenResult = await authResponse.Content.ReadFromJsonAsync<TokenResponse>();
+                    _token = tokenResult?.Token;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_token))
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+            }
+            return client;
         }
 
         public async Task<IActionResult> Index(DateTime? startDate, DateTime? endDate, string status)
         {
-            IQueryable<Contract> query = db.Contracts.Include(c => c.Client).AsQueryable();
+            HttpClient client = await GetClientAsync();
+            
+            string query = $"/api/contracts?status={status}";
+            List<Contract> contracts = await client.GetFromJsonAsync<List<Contract>>(query);
 
-            if (startDate.HasValue)
+            if (contracts != null)
             {
-                query = query.Where(c => c.StartDate >= startDate.Value);
+                if (startDate.HasValue)
+                {
+                    contracts = contracts.Where(c => c.StartDate >= startDate.Value).ToList();
+                }
+
+                if (endDate.HasValue)
+                {
+                    contracts = contracts.Where(c => c.EndDate <= endDate.Value).ToList();
+                }
             }
-
-            if (endDate.HasValue)
-            {
-                query = query.Where(c => c.EndDate <= endDate.Value);
-            }
-
-            if (!string.IsNullOrEmpty(status))
-            {
-                query = query.Where(c => c.Status == status);
-            }
-
-            List<Contract> contracts = await query.OrderByDescending(c => c.Id).ToListAsync();
-
+            
             ViewBag.StartDate = startDate?.ToString("yyyy-MM-dd");
             ViewBag.EndDate = endDate?.ToString("yyyy-MM-dd");
             ViewBag.Status = status;
 
-            return View(contracts);
+            return View(contracts ?? new List<Contract>());
         }
 
         public async Task<IActionResult> Create()
         {
-            List<Client> clients = await db.Clients.ToListAsync();
+            HttpClient client = await GetClientAsync();
+            List<Client> clients = await client.GetFromJsonAsync<List<Client>>("/api/clients") ?? new List<Client>();
             ViewBag.Clients = clients;
             return View();
         }
@@ -72,16 +96,16 @@ namespace TechMove.Glms.Web.Controllers
         public async Task<IActionResult> Create(ContractCreateViewModel contract, IFormFile agreementPdf, string ContractType)
         {
             Contract newContract;
+            HttpClient client = await GetClientAsync();
 
             try
             {
-                newContract = contractFactory.Create(ContractType);
+                newContract = _contractFactory.Create(ContractType);
             }
             catch (ArgumentException ex)
             {
                 ModelState.AddModelError("", ex.Message);
-                List<Client> li = await db.Clients.ToListAsync();
-                ViewBag.Clients = li;
+                ViewBag.Clients = await client.GetFromJsonAsync<List<Client>>("/api/clients") ?? new List<Client>();
                 return View(contract);
             }
 
@@ -108,15 +132,14 @@ namespace TechMove.Glms.Web.Controllers
 
             if (agreementPdf != null)
             {
-                if (!fileValidator.IsValidPdf(agreementPdf))
+                if (!_fileValidator.IsValidPdf(agreementPdf))
                 {
-                    ModelState.AddModelError("SignedAgreementPdfPath", "Only genuine PDF files are accepted for the Signed Agreement (the file must have a .pdf extension, application/pdf MIME type, and a valid PDF header).");
-                    List<Client> li = await db.Clients.ToListAsync();
-                    ViewBag.Clients = li;
+                    ModelState.AddModelError("SignedAgreementPdfPath", "Only genuine PDF files are accepted for the Signed Agreement.");
+                    ViewBag.Clients = await client.GetFromJsonAsync<List<Client>>("/api/clients") ?? new List<Client>();
                     return View(contract);
                 }
 
-                string uploadsFolder = Path.Combine(env.WebRootPath, "uploads", "contracts");
+                string uploadsFolder = Path.Combine(_env.WebRootPath, "uploads", "contracts");
                 Directory.CreateDirectory(uploadsFolder);
 
                 string uniqueFileName = Guid.NewGuid().ToString() + "_" + agreementPdf.FileName;
@@ -132,25 +155,32 @@ namespace TechMove.Glms.Web.Controllers
 
             if (ModelState.IsValid)
             {
-                db.Add(newContract);
-                await db.SaveChangesAsync();
-                return RedirectToAction("Index");
+                var response = await client.PostAsJsonAsync("/api/contracts", newContract);
+                if (response.IsSuccessStatusCode)
+                {
+                    return RedirectToAction("Index");
+                }
+                else
+                {
+                    ModelState.AddModelError("", "API Error: " + await response.Content.ReadAsStringAsync());
+                }
             }
 
-            List<Client> cli = await db.Clients.ToListAsync();
-            ViewBag.Clients = cli;
+            ViewBag.Clients = await client.GetFromJsonAsync<List<Client>>("/api/clients") ?? new List<Client>();
             return View(contract);
         }
 
         public async Task<IActionResult> DownloadAgreement(int id)
         {
-            Contract contract = await db.Contracts.FindAsync(id);
+            HttpClient client = await GetClientAsync();
+            var contract = await client.GetFromJsonAsync<Contract>($"/api/contracts/{id}");
+            
             if (contract == null || string.IsNullOrEmpty(contract.SignedAgreementPdfPath))
             {
                 return NotFound("Agreement file not found.");
             }
 
-            string filePath = Path.Combine(env.WebRootPath, contract.SignedAgreementPdfPath.TrimStart('/'));
+            string filePath = Path.Combine(_env.WebRootPath, contract.SignedAgreementPdfPath.TrimStart('/'));
             if (!System.IO.File.Exists(filePath))
             {
                 return NotFound("File does not exist on disk.");
@@ -163,6 +193,11 @@ namespace TechMove.Glms.Web.Controllers
             }
             memory.Position = 0;
             return File(memory, "application/pdf", Path.GetFileName(filePath));
+        }
+
+        private class TokenResponse
+        {
+            public string Token { get; set; }
         }
     }
 }

@@ -4,7 +4,6 @@
 .vs/
 .vscode/
 .idea/
-*.user
 
 # Build results
 [Dd]ebug/
@@ -38,9 +37,9 @@ bld/
 *.sln.docstates
 *.sln.DotSettings.user
 
-# Application Secrets and Configuration
-appsettings.json
-appsettings.*.json
+# Block development override and secrets but allow base appsettings
+appsettings.Development.json
+appsettings.Production.json
 secrets.json
 
 # Web root uploads

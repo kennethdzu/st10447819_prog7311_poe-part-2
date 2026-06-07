@@ -1,43 +1,55 @@
 using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
+using System.Net.Http.Json;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.EntityFrameworkCore;
-using TechMove.Glms.Web.Data;
 using TechMove.Glms.Web.Models;
-using TechMove.Glms.Web.Services;
 
 namespace TechMove.Glms.Web.Controllers
 {
     public class ServiceRequestController : Controller
     {
-        AppDbContext db;
-        ICurrencyConversionStrategy currencyStrategy;
-        IContractWorkflowService workflowService;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private string _token;
 
-        public ServiceRequestController(
-            AppDbContext context,
-            ICurrencyConversionStrategy strategy,
-            IContractWorkflowService service)
+        public ServiceRequestController(IHttpClientFactory httpClientFactory)
         {
-            db = context;
-            currencyStrategy = strategy;
-            workflowService = service;
+            _httpClientFactory = httpClientFactory;
+        }
+
+        private async Task<HttpClient> GetClientAsync()
+        {
+            HttpClient client = _httpClientFactory.CreateClient("ApiClient");
+            
+            if (string.IsNullOrEmpty(_token))
+            {
+                var authResponse = await client.PostAsync("/api/auth/login", null);
+                if (authResponse.IsSuccessStatusCode)
+                {
+                    var tokenResult = await authResponse.Content.ReadFromJsonAsync<TokenResponse>();
+                    _token = tokenResult?.Token;
+                }
+            }
+
+            if (!string.IsNullOrEmpty(_token))
+            {
+                client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", _token);
+            }
+            return client;
         }
 
         public async Task<IActionResult> Index()
         {
-            List<ServiceRequest> requests = await db.ServiceRequests
-                .Include(sr => sr.Contract)
-                .ThenInclude(c => c.Client)
-                .ToListAsync();
+            HttpClient client = await GetClientAsync();
+            List<ServiceRequest> requests = await client.GetFromJsonAsync<List<ServiceRequest>>("/api/servicerequests") ?? new List<ServiceRequest>();
             return View(requests);
         }
 
         public async Task<IActionResult> Create(int? contractId)
         {
-            List<Contract> contracts = await db.Contracts.ToListAsync();
+            HttpClient client = await GetClientAsync();
+            List<Contract> contracts = await client.GetFromJsonAsync<List<Contract>>("/api/contracts") ?? new List<Contract>();
             ViewBag.Contracts = contracts;
 
             return View();
@@ -47,36 +59,37 @@ namespace TechMove.Glms.Web.Controllers
         [ValidateAntiForgeryToken]
         public async Task<IActionResult> Create([Bind("ContractId,Description,Status")] ServiceRequest serviceRequest, decimal CostUsd)
         {
-            Contract contract = await db.Contracts
-                .AsNoTracking()
-                .FirstOrDefaultAsync(c => c.Id == serviceRequest.ContractId);
-
-            string workflowError = workflowService.ValidateServiceRequestCreation(contract);
-            
-            if (workflowError != null)
-            {
-                ModelState.AddModelError("ContractId", workflowError);
-            }
-
             if (ModelState.IsValid)
             {
-                try
+                HttpClient client = await GetClientAsync();
+                
+                var payload = new
                 {
-                    serviceRequest.Cost = await currencyStrategy.ConvertUsdToZarAsync(CostUsd);
+                    Request = serviceRequest,
+                    CostUsd = CostUsd
+                };
 
-                    db.Add(serviceRequest);
-                    await db.SaveChangesAsync();
+                var response = await client.PostAsJsonAsync("/api/servicerequests", payload);
+                
+                if (response.IsSuccessStatusCode)
+                {
                     return RedirectToAction("Index");
                 }
-                catch (Exception ex)
+                else
                 {
-                    ModelState.AddModelError("CostUsd", "Currency Conversion Failed: " + ex.Message);
+                    ModelState.AddModelError("", "API Error: " + await response.Content.ReadAsStringAsync());
                 }
             }
 
-            List<Contract> cli = await db.Contracts.ToListAsync();
+            HttpClient refreshClient = await GetClientAsync();
+            List<Contract> cli = await refreshClient.GetFromJsonAsync<List<Contract>>("/api/contracts") ?? new List<Contract>();
             ViewBag.Contracts = cli;
             return View(serviceRequest);
+        }
+
+        private class TokenResponse
+        {
+            public string Token { get; set; }
         }
     }
 }
